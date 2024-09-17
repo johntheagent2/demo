@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: demo
+  data:
+    elasticsearch:
+      client:
+        rest:
+          uris: http://localhost:9200  # Elasticsearch server URL
+          connection-timeout: 5000     # Optional: connection timeout in milliseconds
+          socket-timeout: 30000        # Optional: socket timeout in milliseconds
