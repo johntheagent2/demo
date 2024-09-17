@@ -1,7 +1,12 @@
 package com.sparkminds.elasticSearch.service.impl;
 
+import com.sparkminds.elasticSearch.dto.TyreRequestDto;
 import com.sparkminds.elasticSearch.entity.TyreEntity;
+import com.sparkminds.elasticSearch.entity.attributes.Brand;
+import com.sparkminds.elasticSearch.entity.attributes.TyrePattern;
 import com.sparkminds.elasticSearch.repository.TyreRepository;
+import com.sparkminds.elasticSearch.service.BrandService;
+import com.sparkminds.elasticSearch.service.TyrePatternService;
 import com.sparkminds.elasticSearch.service.TyreService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,15 +18,29 @@ import java.util.Optional;
 public class TyreServiceImpl implements TyreService {
 
     private final TyreRepository tyreRepository;
-    
+    private final TyrePatternService tyrePatternService;
+    private final BrandService brandService;
 
     @Override
-    public TyreEntity saveTyre(TyreEntity tyreEntity) {
-        return tyreRepository.save(tyreEntity);
+    public TyreEntity saveTyre(TyreRequestDto dto) {
+
+        Brand brand = brandService.getBrandById(dto.getBrandId()).orElseThrow();
+        TyrePattern pattern = tyrePatternService.getTyrePatternById(dto.getPatternId()).orElseThrow();
+
+        TyreEntity tyre = TyreEntity.builder()
+                .name(dto.getName())
+                .height(dto.getHeight())
+                .width(dto.getWidth())
+                .rim(dto.getRim())
+                .year(dto.getYear())
+                .brand(brand)
+                .pattern(pattern)
+                .build();
+        return tyreRepository.save(tyre);
     }
 
     @Override
-    public Optional<TyreEntity> getTyreById(Long id) {
+    public Optional<TyreEntity> getTyreById(String id) {
         return tyreRepository.findById(id);
     }
 
@@ -31,7 +50,7 @@ public class TyreServiceImpl implements TyreService {
     }
 
     @Override
-    public void deleteTyreById(Long id) {
+    public void deleteTyreById(String id) {
         tyreRepository.deleteById(id);
     }
 }

@@ -1,19 +1,19 @@
 package com.sparkminds.elasticSearch.entity.attributes;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Document(indexName = "tyre_pattern")
 public class TyrePattern {
 
-    private Long id;
+    @Id
+    private String id;
 
     private String name;
 }

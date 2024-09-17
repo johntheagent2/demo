@@ -1,5 +1,6 @@
 package com.sparkminds.elasticSearch.service.impl;
 
+import com.sparkminds.elasticSearch.dto.BrandRequestDto;
 import com.sparkminds.elasticSearch.entity.attributes.Brand;
 import com.sparkminds.elasticSearch.repository.BrandRepository;
 import com.sparkminds.elasticSearch.service.BrandService;
@@ -19,12 +20,15 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public Brand saveBrand(Brand brand) {
+    public Brand saveBrand(BrandRequestDto dto) {
+        Brand brand = Brand.builder()
+                .name(dto.getName())
+                .build();
         return brandRepository.save(brand);
     }
 
     @Override
-    public Optional<Brand> getBrandById(Long id) {
+    public Optional<Brand> getBrandById(String id) {
         return brandRepository.findById(id);
     }
 
@@ -34,7 +38,7 @@ public class BrandServiceImpl implements BrandService {
     }
 
     @Override
-    public void deleteBrandById(Long id) {
+    public void deleteBrandById(String id) {
         brandRepository.deleteById(id);
     }
 }

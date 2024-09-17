@@ -1,20 +1,15 @@
 package com.sparkminds.elasticSearch.entity;
 
 import com.sparkminds.elasticSearch.entity.attributes.TyrePattern;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.springframework.data.elasticsearch.annotations.Document;
 
 @Getter
 @Setter
-@AllArgsConstructor
-@NoArgsConstructor
+@SuperBuilder
 @Document(indexName = "tyre") // Name of the Elasticsearch index
 public class TyreEntity extends AutomotiveEntity{
-
-    private Long id;
 
     private Integer width;
 

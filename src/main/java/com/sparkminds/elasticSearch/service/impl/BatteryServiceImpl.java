@@ -21,7 +21,7 @@ public class BatteryServiceImpl implements BatteryService {
     }
 
     @Override
-    public Optional<BatteryEntity> getBatteryById(Long id) {
+    public Optional<BatteryEntity> getBatteryById(String id) {
         return batteryRepository.findById(id);
     }
 
@@ -31,7 +31,7 @@ public class BatteryServiceImpl implements BatteryService {
     }
 
     @Override
-    public void deleteBatteryById(Long id) {
+    public void deleteBatteryById(String id) {
         batteryRepository.deleteById(id);
     }
 }
