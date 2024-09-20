@@ -1,5 +1,6 @@
 package com.sparkminds.elasticSearch.service.impl;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.sparkminds.elasticSearch.dto.TyreRequestDto;
 import com.sparkminds.elasticSearch.entity.TyreEntity;
 import com.sparkminds.elasticSearch.entity.attributes.Brand;
@@ -20,6 +21,7 @@ public class TyreServiceImpl implements TyreService {
     private final TyreRepository tyreRepository;
     private final TyrePatternService tyrePatternService;
     private final BrandService brandService;
+    private final ElasticsearchClient client;
 
     @Override
     public TyreEntity saveTyre(TyreRequestDto dto) {
@@ -38,6 +40,9 @@ public class TyreServiceImpl implements TyreService {
                 .build();
         return tyreRepository.save(tyre);
     }
+
+//    public List<TyreEntity> search(SearchRequestDto dto){
+//    }
 
     @Override
     public Optional<TyreEntity> getTyreById(String id) {

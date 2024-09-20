@@ -1,13 +1,19 @@
 package com.sparkminds.elasticSearch.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.sparkminds.elasticSearch.entity.attributes.Brand;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.Field;
+import org.springframework.data.elasticsearch.annotations.FieldType;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @SuperBuilder
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AutomotiveEntity {
 
     @Id
@@ -15,6 +21,7 @@ public class AutomotiveEntity {
 
     private String name;
 
+    @Field(type = FieldType.Nested)
     private Brand brand;
 
     private String year;
