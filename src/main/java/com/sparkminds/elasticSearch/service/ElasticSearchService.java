@@ -14,4 +14,6 @@ public interface ElasticSearchService {
     SearchResponse<TyreEntity> matchQuery(Map<String, String> searchCriteria) throws IOException;
 
     SearchResponse<TyreEntity> fuzzyQuery(String field, String value) throws IOException;
+
+    void reIndex(String baseIndexName, String aliasName) throws Exception;
 }

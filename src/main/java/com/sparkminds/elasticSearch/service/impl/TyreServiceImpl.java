@@ -33,7 +33,7 @@ public class TyreServiceImpl implements TyreService {
                 .name(dto.getName())
                 .height(dto.getHeight())
                 .width(dto.getWidth())
-                .rim(dto.getRim())
+//                .rim(dto.getRim())
                 .year(dto.getYear())
                 .brand(brand)
                 .pattern(pattern)

@@ -62,4 +62,9 @@ public class TyreController {
                 .collect(Collectors.toList());
     }
 
+    @PutMapping("/reindex")
+    public ResponseEntity<Void> reindex() throws Exception {
+        elasticSearchService.reIndex("tyre", "tyre");
+        return ResponseEntity.accepted().build();
+    }
 }

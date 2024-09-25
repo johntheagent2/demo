@@ -20,7 +20,7 @@ public class SearchUtil {
     }
 
     public static Supplier<Query> multiFieldQuerySupplier(Map<String, String> searchCriteria) {
-        Supplier<Query> supplier = () -> Query.of(q ->
+        return () -> Query.of(q ->
                 q.bool(b -> {
                     for (Map.Entry<String, String> entry : searchCriteria.entrySet()) {
                         b.must(m -> m.match(mt -> mt.field(entry.getKey()).query(entry.getValue())));
@@ -28,7 +28,6 @@ public class SearchUtil {
                     return b;
                 })
         );
-        return supplier;
     }
 
     public static Supplier<Query> fuzzySearchSupplier(String field, String value) {
