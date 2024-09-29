@@ -8,3 +8,16 @@ spring:
           uris: http://localhost:9200  # Elasticsearch server URL
           connection-timeout: 5000     # Optional: connection timeout in milliseconds
           socket-timeout: 30000        # Optional: socket timeout in milliseconds
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/elastic_search_demo
+    username: postgres
+    password: admin
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update

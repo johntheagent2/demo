@@ -1,20 +1,15 @@
 package com.sparkminds.elasticSearch.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.mapping.TypeMapping;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
-import co.elastic.clients.elasticsearch.indices.CreateIndexRequest;
-import com.sparkminds.elasticSearch.entity.TyreEntity;
+import com.sparkminds.elasticSearch.entity.document.TyreDocument;
 import com.sparkminds.elasticSearch.service.ElasticSearchService;
 import com.sparkminds.elasticSearch.util.SearchUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.elasticsearch.client.elc.NativeQuery;
-import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
+import org.hibernate.sql.Alias;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.IndexOperations;
-import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.index.AliasAction;
 import org.springframework.data.elasticsearch.core.index.AliasActionParameters;
@@ -25,11 +20,9 @@ import org.springframework.data.elasticsearch.core.reindex.ReindexRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -37,33 +30,34 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
 
     private final ElasticsearchClient client;
     private final ElasticsearchOperations elasticsearchOperations;
+    private static final String ALIAS_NAME = "tyre";
 
     @Override
-    public SearchResponse<TyreEntity> matchAllService() throws IOException {
+    public SearchResponse<TyreDocument> matchAllService() throws IOException {
         Supplier<Query> supplier = SearchUtil.supplier();
-        SearchResponse<TyreEntity> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreEntity.class);
+        SearchResponse<TyreDocument> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreDocument.class);
         return searchResponse;
     }
 
     @Override
-    public SearchResponse<TyreEntity> matchService(String value) throws IOException {
+    public SearchResponse<TyreDocument> matchService(String value) throws IOException {
         Supplier<Query> supplier = SearchUtil.supplierWithNameField(value);
-        SearchResponse<TyreEntity> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreEntity.class);
+        SearchResponse<TyreDocument> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreDocument.class);
         return searchResponse;
     }
 
     @Override
-    public SearchResponse<TyreEntity> matchQuery(Map<String, String> searchCriteria) throws IOException {
+    public SearchResponse<TyreDocument> matchQuery(Map<String, String> searchCriteria) throws IOException {
         Supplier<Query> supplier = SearchUtil.multiFieldQuerySupplier(searchCriteria);
-        SearchResponse<TyreEntity> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreEntity.class);
+        SearchResponse<TyreDocument> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreDocument.class);
         return searchResponse;
     }
 
 
     @Override
-    public SearchResponse<TyreEntity> fuzzyQuery(String field, String value) throws IOException {
+    public SearchResponse<TyreDocument> fuzzyQuery(String field, String value, int page, int size) throws IOException {
         Supplier<Query> supplier = SearchUtil.fuzzySearchSupplier(field, value);
-        return createResponse(supplier);
+        return createResponse(supplier, page, size);
     }
 
     @Override
@@ -75,7 +69,7 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
         // Step 2: Create the new index
         IndexOperations indexOps = elasticsearchOperations.indexOps(IndexCoordinates.of(newIndexName));
         indexOps.create();
-        Document mapping = indexOps.createMapping(TyreEntity.class);
+        Document mapping = indexOps.createMapping(TyreDocument.class);
         indexOps.putMapping(mapping);
 
         System.out.println("New index created: " + newIndexName);
@@ -121,8 +115,48 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
         System.out.println("Old index deleted: " + oldIndexName);
     }
 
-    private SearchResponse<TyreEntity> createResponse(Supplier<Query> supplier) throws IOException {
-        return client.search(s -> s.index("tyre").query(supplier.get()), TyreEntity.class);
+    public void createOrUpdateIndexWithAlias() {
+        IndexOperations indexOperations = elasticsearchOperations.indexOps(IndexCoordinates.of(ALIAS_NAME));
+
+        // Check if alias already exists
+        boolean aliasExists = indexOperations.exists();
+        if (aliasExists) {
+            // Get all indices associated with the alias
+            Map<String, Set<AliasData>> aliasInfo = elasticsearchOperations.indexOps(IndexCoordinates.of(ALIAS_NAME)).getAliases();
+
+            // If alias exists and points to an index, skip creation
+            if (!aliasInfo.isEmpty()) {
+                String currentIndex = aliasInfo.keySet().iterator().next();
+                System.out.println("Alias " + ALIAS_NAME + " already points to index: " + currentIndex);
+                return; // Alias already points to an index, no need to create a new one
+            }
+        }
+
+        // Create new index with a timestamp if no alias or index exists
+        String newIndexName = ALIAS_NAME + "_" + System.currentTimeMillis();
+        IndexOperations newIndex = elasticsearchOperations.indexOps(IndexCoordinates.of(newIndexName));
+        newIndex.create();
+        newIndex.putMapping(indexOperations.createMapping(TyreDocument.class));
+
+        // Create alias pointing to the new index
+        newIndex.alias(
+                new AliasActions(
+                        new AliasAction.Add(
+                                AliasActionParameters
+                                        .builder()
+                                        .withAliases(ALIAS_NAME)
+                                        .withIndices(newIndexName)
+                                        .build())));
+
+        System.out.println("Created new index: " + newIndexName + " and pointed alias " + ALIAS_NAME + " to it.");
+    }
+
+
+    private SearchResponse<TyreDocument> createResponse(Supplier<Query> supplier, int page, int size) throws IOException {
+        return client.search(s -> s.index("tyre")
+                .query(supplier.get())
+                .from(page * size)
+                .size(size) , TyreDocument.class);
     }
 
     private String getIndexNameFromAlias(String aliasName) throws Exception {

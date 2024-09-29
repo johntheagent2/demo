@@ -1,7 +1,5 @@
 package com.sparkminds.elasticSearch.dto;
 
-import com.sparkminds.elasticSearch.entity.attributes.Brand;
-import com.sparkminds.elasticSearch.entity.attributes.TyrePattern;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +19,11 @@ public class TyreRequestDto {
 
     private Integer rim;
 
+    private String loadIndex;
+
     private String year;
 
-    private String patternId;
+    private String pattern;
 
-    private String brandId;
+    private String brand;
 }
