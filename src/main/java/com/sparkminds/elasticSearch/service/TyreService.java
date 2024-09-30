@@ -5,6 +5,7 @@ import com.sparkminds.elasticSearch.entity.TyreEntity;
 import com.sparkminds.elasticSearch.entity.document.TyreDocument;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface TyreService {
@@ -17,4 +18,6 @@ public interface TyreService {
     void deleteTyreById(Long id);
 
     void importTyresFromCSV(MultipartFile file);
+
+    void bulkUpload(List<TyreRequestDto> dtos);
 }

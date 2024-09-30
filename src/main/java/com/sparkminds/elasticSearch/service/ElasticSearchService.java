@@ -11,9 +11,9 @@ public interface ElasticSearchService {
 
     SearchResponse<TyreDocument> matchService(String value) throws IOException;
 
-    SearchResponse<TyreDocument> matchQuery(Map<String, String> searchCriteria) throws IOException;
+    SearchResponse<TyreDocument> matchQuery(Map<String, String> searchCriteria, int page, int size, String sortBy, String sortOrder) throws IOException;
 
-    SearchResponse<TyreDocument> fuzzyQuery(String field, String value, int page, int size) throws IOException;
+    SearchResponse<TyreDocument> fuzzyQuery(String field, String value, int page, int size, String sortField, String sortOrder) throws IOException;
 
     void reIndex(String baseIndexName, String aliasName) throws Exception;
 

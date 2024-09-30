@@ -16,7 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,10 +63,51 @@ public class TyreServiceImpl implements TyreService {
         tyreDocumentRepository.save(tyreDocument);
     }
 
+    @Override
+    @Transactional
+    public void bulkUpload(List<TyreRequestDto> dtos) {
+        List<TyreEntity> tyreEntities = dtos.stream()
+                .map(dto -> TyreEntity.builder()
+                        .name(dto.getName())
+                        .height(dto.getHeight())
+                        .width(dto.getWidth())
+                        .rim(dto.getRim())
+                        .loadIndex(dto.getLoadIndex())
+                        .year(dto.getYear())
+                        .brand(dto.getBrand())
+                        .pattern(dto.getPattern())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Bulk save the TyreEntities and retrieve the saved instances
+        List<TyreEntity> savedTyres = tyreRepository.saveAll(tyreEntities);
+
+        // Prepare documents for bulk insertion into Elasticsearch
+        List<TyreDocument> tyreDocuments = savedTyres.stream()
+                .map(tyre -> TyreDocument.builder()
+                        .id(tyre.getId())
+                        .name(tyre.getName())
+                        .height(tyre.getHeight())
+                        .width(tyre.getWidth())
+                        .rim(tyre.getRim())
+                        .loadIndex(tyre.getLoadIndex())
+                        .year(tyre.getYear())
+                        .brand(tyre.getBrand())
+                        .pattern(tyre.getPattern())
+                        .build())
+                .collect(Collectors.toList());
+
+        // Bulk save TyreDocuments to Elasticsearch
+        tyreDocumentRepository.saveAll(tyreDocuments);
+    }
+
     @Transactional
     public void importTyresFromCSV(MultipartFile file) {
         try (CSVReader csvReader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
             String[] nextLine;
+            List<TyreRequestDto> tyreDtos = new ArrayList<>();
+            int batchSize = 200; // Adjust the batch size as needed
+
             // Skip the header line
             csvReader.readNext();
             while ((nextLine = csvReader.readNext()) != null) {
@@ -73,17 +117,30 @@ public class TyreServiceImpl implements TyreService {
                         .height(Integer.parseInt(nextLine[2]))
                         .rim(Integer.parseInt(nextLine[3]))
                         .loadIndex(nextLine[4])
-                        .year(nextLine[6])  // Assuming year is in column 6
-                        .brand(nextLine[5])  // Assuming brand is in column 5
-                        .pattern(nextLine[7]) // Assuming pattern is in column 7
+                        .year(nextLine[7])  // Assuming year is in column 6
+                        .brand(nextLine[6])  // Assuming brand is in column 5
+                        .pattern(nextLine[5]) // Assuming pattern is in column 7
                         .build();
 
-                saveTyre(dto);
+                tyreDtos.add(dto);
+
+                // Process in batches
+                if (tyreDtos.size() == batchSize) {
+                    bulkUpload(tyreDtos);
+                    tyreDtos.clear(); // Clear the list after saving the batch
+                }
             }
+
+            // Save remaining items if any
+            if (!tyreDtos.isEmpty()) {
+                bulkUpload(tyreDtos);
+            }
+
         } catch (CsvValidationException | IOException e) {
             throw new RuntimeException(e);
         }
     }
+
 
     @Override
     public Optional<TyreEntity> getTyreById(Long id) {

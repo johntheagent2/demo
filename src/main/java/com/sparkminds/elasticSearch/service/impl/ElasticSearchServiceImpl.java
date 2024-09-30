@@ -1,11 +1,13 @@
 package com.sparkminds.elasticSearch.service.impl;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch.core.SearchResponse;
 import com.sparkminds.elasticSearch.entity.document.TyreDocument;
 import com.sparkminds.elasticSearch.service.ElasticSearchService;
 import com.sparkminds.elasticSearch.util.SearchUtil;
+import jakarta.persistence.criteria.Order;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.sql.Alias;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -47,17 +49,17 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     }
 
     @Override
-    public SearchResponse<TyreDocument> matchQuery(Map<String, String> searchCriteria) throws IOException {
+    public SearchResponse<TyreDocument> matchQuery(Map<String, String> searchCriteria, int page, int size, String sortBy, String sortOrder) throws IOException {
         Supplier<Query> supplier = SearchUtil.multiFieldQuerySupplier(searchCriteria);
-        SearchResponse<TyreDocument> searchResponse = client.search(s -> s.index("tyre").query(supplier.get()), TyreDocument.class);
-        return searchResponse;
+        return createResponse(supplier, page, size, sortBy, sortOrder);
     }
 
 
     @Override
-    public SearchResponse<TyreDocument> fuzzyQuery(String field, String value, int page, int size) throws IOException {
+    public SearchResponse<TyreDocument> fuzzyQuery(String field, String value, int page, int size, String sortField,
+                                                   String sortOrder) throws IOException {
         Supplier<Query> supplier = SearchUtil.fuzzySearchSupplier(field, value);
-        return createResponse(supplier, page, size);
+        return createResponse(supplier, page, size, sortField, sortOrder);
     }
 
     @Override
@@ -152,11 +154,31 @@ public class ElasticSearchServiceImpl implements ElasticSearchService {
     }
 
 
-    private SearchResponse<TyreDocument> createResponse(Supplier<Query> supplier, int page, int size) throws IOException {
-        return client.search(s -> s.index("tyre")
-                .query(supplier.get())
-                .from(page * size)
-                .size(size) , TyreDocument.class);
+    private SearchResponse<TyreDocument> createResponse(Supplier<Query> supplier, int page, int size, String sortField, String sortOrder) throws IOException {
+        // Use "year.keyword" instead of "year"
+
+        if(sortField != null && !sortField.isEmpty() && sortOrder != null && !sortOrder.isEmpty()){
+            String sortFieldAdjusted = sortField.equals("year") ? "year.keyword" : sortField;
+            return client.search(s -> s
+                            .index("tyre")
+                            .query(supplier.get())
+                            .from(page * size)
+                            .size(size)
+                            .sort(s1 -> s1.field(f -> f.field(sortFieldAdjusted)
+                                    .order(sortOrder.equalsIgnoreCase("asc")
+                                            ? SortOrder.Asc
+                                            : SortOrder.Desc))), // Apply sorting if sortBy and sortOrder are provided
+                    TyreDocument.class
+            );
+        }else{
+            return client.search(s -> s
+                            .index("tyre")
+                            .query(supplier.get())
+                            .from(page * size)
+                            .size(size),
+                    TyreDocument.class
+            );
+        }
     }
 
     private String getIndexNameFromAlias(String aliasName) throws Exception {
